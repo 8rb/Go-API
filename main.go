@@ -150,8 +150,10 @@ func readCsvFile(filePath string) [][]string {
 
 func main() {
 
+	port := os.Getenv("PORT")
+	fmt.Println("Running on port:", port)
 	records = readCsvFile("./indicadoresrural2018.csv")
-	fmt.Println(records)
+	// fmt.Println(records)
 
 	router := mux.NewRouter().StrictSlash(true)
 
@@ -162,5 +164,5 @@ func main() {
 	router.HandleFunc("/tasks/{id}", deleteTask).Methods("DELETE")
 	router.HandleFunc("/tasks/{id}", updateTask).Methods("PUT")
 	router.HandleFunc("/indicadores/", getRows).Methods("GET")
-	log.Fatal(http.ListenAndServe(":3000", router))
+	log.Fatal(http.ListenAndServe(":"+port, router))
 }
