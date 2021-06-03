@@ -7,6 +7,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"strconv"
 
 	"github.com/8rb/Go-API/model"
 	"github.com/gorilla/mux"
@@ -66,6 +67,30 @@ func getIndicatorByName(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(response)
 }
 
+func compareTwoIndicators(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	indicator1 := vars["indicator1"]
+	indicator2 := vars["indicator2"]
+	fmt.Println(indicator1, indicator2)
+	if indicator1 == os.DevNull || indicator2 == os.DevNull {
+		return
+	}
+	fmt.Println(indicator1, indicator2)
+	response := []model.Indicator{}
+	for _, row := range data {
+		x, _ := strconv.Atoi(row[columns[indicator1]])
+		y, _ := strconv.Atoi(row[columns[indicator2]])
+		object := model.Indicator{
+			Label: row[columns["D_DPTO"]],
+			X:     x,
+			Y:     y,
+		}
+		response = append(response, object)
+	}
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(response)
+}
+
 func getAllIndicators(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	response := []model.AllFields{}
@@ -104,6 +129,7 @@ func getAllIndicators(w http.ResponseWriter, r *http.Request) {
 		}
 		response = append(response, object)
 	}
+	//implementar el algoritmo
 	json.NewEncoder(w).Encode(response)
 }
 
@@ -134,5 +160,6 @@ func main() {
 	router.HandleFunc("/", indexRoute)
 	router.HandleFunc("/indicators", getAllIndicators).Methods("GET")
 	router.HandleFunc("/indicators/{name}", getIndicatorByName).Methods("GET")
+	router.HandleFunc("/indicators/{indicator1}/{indicator2}", compareTwoIndicators).Methods("GET")
 	log.Fatal(http.ListenAndServe(":"+port, router))
 }

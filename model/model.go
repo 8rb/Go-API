@@ -5,7 +5,14 @@ type OneField struct {
 }
 
 type TwoFields struct {
-	Field1 string `json:"field2"`
+	Field1 string `json:"field1"`
+	Field2 string `json:"field2"`
+}
+
+type Indicator struct {
+	X     int    `json:"x"`
+	Y     int    `json:"y"`
+	Label string `json:"label"`
 }
 
 type AllFields struct {
