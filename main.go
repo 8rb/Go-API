@@ -4,132 +4,107 @@ import (
 	"encoding/csv"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"log"
 	"net/http"
 	"os"
-	"strconv"
 
+	"github.com/8rb/Go-API/model"
 	"github.com/gorilla/mux"
 )
 
-// Types
-type task struct {
-	ID      int    `json:"ID"`
-	Name    string `json:"Name"`
-	Content string `json:"Content"`
+var data = [][]string{}
+
+var columns = map[string]int{
+	"D_DPTO":            0,
+	"D_PROV":            1,
+	"D_DIST":            2,
+	"D_DREUGEL":         3,
+	"RURAL_PMM":         4,
+	"RURAL_PMM_MUJE1":   5,
+	"RURAL_PMM_MUJE2":   6,
+	"RURAL_PMM_HOME1":   7,
+	"RURAL_PMM_HOME2":   8,
+	"RURAL_PMMA_MUJE1":  9,
+	"RURAL_PMMA_MUJE2":  10,
+	"RURAL_PMMA_HOME1":  11,
+	"RURAL_PMMA_HOME2":  12,
+	"RURAL_PMM_MUJDOC":  13,
+	"RURAL_PMM_HOMDOC":  14,
+	"RURAL_PMMA_MUJDOC": 15,
+	"RURAL_PMMA_HOMDOC": 16,
+	"RURAL_CRFA":        17,
+	"RURAL_SRE":         18,
+	"RURAL_ST":          19,
+	"RURAL_CRFA_MUJE1":  20,
+	"RURAL_CRFA_MUJE2":  21,
+	"RURAL_CRFA_HOME1":  22,
+	"RURAL_CRFA_HOME2":  23,
+	"RURAL_SRE_MUJE1":   24,
+	"RURAL_SRE_MUJE2":   25,
+	"RURAL_SRE_HOME1":   26,
+	"RURAL_SRE_HOME2":   27,
+	"RURAL_MSE_MUJDOC":  28,
+	"RURAL_MSE_HOMDOC":  29,
 }
-
-type allTasks []task
-
-// Persistence
-var tasks = allTasks{
-	{
-		ID:      1,
-		Name:    "Task One",
-		Content: "Some Content",
-	},
-}
-
-type row struct {
-	D_DPTO string `json:"D_DPTO"`
-}
-
-type allRows []row
-
-var records = [][]string{}
 
 func indexRoute(w http.ResponseWriter, r *http.Request) {
-	fmt.Fprintf(w, "Wecome the my GO API!")
+	fmt.Fprintf(w, "Welcome the my GO API!")
 }
 
-func createTask(w http.ResponseWriter, r *http.Request) {
-	var newTask task
-	reqBody, err := ioutil.ReadAll(r.Body)
-	if err != nil {
-		fmt.Fprintf(w, "Insert a Valid Task Data")
-	}
-
-	json.Unmarshal(reqBody, &newTask)
-	newTask.ID = len(tasks) + 1
-	tasks = append(tasks, newTask)
-
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusCreated)
-	json.NewEncoder(w).Encode(newTask)
-
-}
-
-func getTasks(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(tasks)
-}
-
-func getRows(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(records)
-}
-
-func getOneTask(w http.ResponseWriter, r *http.Request) {
+func getIndicatorByName(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
-	taskID, err := strconv.Atoi(vars["id"])
-	if err != nil {
+	colName := vars["name"]
+	if colName == os.DevNull {
 		return
 	}
-
-	for _, task := range tasks {
-		if task.ID == taskID {
-			w.Header().Set("Content-Type", "application/json")
-			json.NewEncoder(w).Encode(task)
-		}
+	response := []model.OneField{}
+	for _, row := range data {
+		object := model.OneField{Field1: row[columns[colName]]}
+		response = append(response, object)
 	}
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(response)
 }
 
-func updateTask(w http.ResponseWriter, r *http.Request) {
-	vars := mux.Vars(r)
-	taskID, err := strconv.Atoi(vars["id"])
-	var updatedTask task
-
-	if err != nil {
-		fmt.Fprintf(w, "Invalid ID")
-	}
-
-	reqBody, err := ioutil.ReadAll(r.Body)
-	if err != nil {
-		fmt.Fprintf(w, "Please Enter Valid Data")
-	}
-	json.Unmarshal(reqBody, &updatedTask)
-
-	for i, t := range tasks {
-		if t.ID == taskID {
-			tasks = append(tasks[:i], tasks[i+1:]...)
-
-			updatedTask.ID = t.ID
-			tasks = append(tasks, updatedTask)
-
-			// w.Header().Set("Content-Type", "application/json")
-			// json.NewEncoder(w).Encode(updatedTask)
-			fmt.Fprintf(w, "The task with ID %v has been updated successfully", taskID)
+func getAllIndicators(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	response := []model.AllFields{}
+	for _, row := range data {
+		object := model.AllFields{
+			D_DPTO:            row[columns["D_DPTO"]],
+			D_PROV:            row[columns["D_PROV"]],
+			D_DIST:            row[columns["D_DIST"]],
+			D_DREUGEL:         row[columns["D_DREUGEL"]],
+			RURAL_PMM:         row[columns["RURAL_PMM"]],
+			RURAL_PMM_MUJE1:   row[columns["RURAL_PMM_MUJE1"]],
+			RURAL_PMM_MUJE2:   row[columns["RURAL_PMM_MUJE2"]],
+			RURAL_PMM_HOME1:   row[columns["RURAL_PMM_HOME1"]],
+			RURAL_PMM_HOME2:   row[columns["RURAL_PMM_HOME2"]],
+			RURAL_PMMA_MUJE1:  row[columns["RURAL_PMMA_MUJE1"]],
+			RURAL_PMMA_MUJE2:  row[columns["RURAL_PMMA_MUJE2"]],
+			RURAL_PMMA_HOME1:  row[columns["RURAL_PMMA_HOME1"]],
+			RURAL_PMMA_HOME2:  row[columns["RURAL_PMMA_HOME2"]],
+			RURAL_PMM_MUJDOC:  row[columns["RURAL_PMM_MUJDOC"]],
+			RURAL_PMM_HOMDOC:  row[columns["RURAL_PMM_HOMDOC"]],
+			RURAL_PMMA_MUJDOC: row[columns["RURAL_PMMA_MUJDOC"]],
+			RURAL_PMMA_HOMDOC: row[columns["RURAL_PMMA_HOMDOC"]],
+			RURAL_CRFA:        row[columns["RURAL_CRFA"]],
+			RURAL_SRE:         row[columns["RURAL_SRE"]],
+			RURAL_ST:          row[columns["RURAL_ST"]],
+			RURAL_CRFA_MUJE1:  row[columns["RURAL_CRFA_MUJE1"]],
+			RURAL_CRFA_MUJE2:  row[columns["RURAL_CRFA_MUJE2"]],
+			RURAL_CRFA_HOME1:  row[columns["RURAL_CRFA_HOME1"]],
+			RURAL_CRFA_HOME2:  row[columns["RURAL_CRFA_HOME2"]],
+			RURAL_SRE_MUJE1:   row[columns["RURAL_SRE_MUJE1"]],
+			RURAL_SRE_MUJE2:   row[columns["RURAL_SRE_MUJE2"]],
+			RURAL_SRE_HOME1:   row[columns["RURAL_SRE_HOME1"]],
+			RURAL_SRE_HOME2:   row[columns["RURAL_SRE_HOME2"]],
+			RURAL_MSE_MUJDOC:  row[columns["RURAL_MSE_MUJDOC"]],
+			RURAL_MSE_HOMDOC:  row[columns["RURAL_MSE_HOMDOC"]],
 		}
+		response = append(response, object)
 	}
-
-}
-
-func deleteTask(w http.ResponseWriter, r *http.Request) {
-	vars := mux.Vars(r)
-	taskID, err := strconv.Atoi(vars["id"])
-
-	if err != nil {
-		fmt.Fprintf(w, "Invalid User ID")
-		return
-	}
-
-	for i, t := range tasks {
-		if t.ID == taskID {
-			tasks = append(tasks[:i], tasks[i+1:]...)
-			fmt.Fprintf(w, "The task with ID %v has been remove successfully", taskID)
-		}
-	}
+	json.NewEncoder(w).Encode(response)
 }
 
 func readCsvFile(filePath string) [][]string {
@@ -152,17 +127,12 @@ func main() {
 
 	port := os.Getenv("PORT")
 	fmt.Println("Running on port:", port)
-	records = readCsvFile("./indicadoresrural2018.csv")
-	// fmt.Println(records)
+	data = readCsvFile("./indicadoresrural2018.csv")
 
 	router := mux.NewRouter().StrictSlash(true)
 
 	router.HandleFunc("/", indexRoute)
-	router.HandleFunc("/tasks", createTask).Methods("POST")
-	router.HandleFunc("/tasks", getTasks).Methods("GET")
-	router.HandleFunc("/tasks/{id}", getOneTask).Methods("GET")
-	router.HandleFunc("/tasks/{id}", deleteTask).Methods("DELETE")
-	router.HandleFunc("/tasks/{id}", updateTask).Methods("PUT")
-	router.HandleFunc("/indicadores/", getRows).Methods("GET")
+	router.HandleFunc("/indicators", getAllIndicators).Methods("GET")
+	router.HandleFunc("/indicators/{name}", getIndicatorByName).Methods("GET")
 	log.Fatal(http.ListenAndServe(":"+port, router))
 }
