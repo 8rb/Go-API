@@ -47,3 +47,10 @@ type AllFields struct {
 	RURAL_MSE_MUJDOC  string `json:"RURAL_MSE_MUJDOC"`
 	RURAL_MSE_HOMDOC  string `json:"RURAL_MSE_HOMDOC"`
 }
+
+type Tuple [2]int
+
+type Group struct {
+	NAME string  `json:"name"`
+	DATA [][]int `json:"data"`
+}

@@ -76,7 +76,7 @@ func compareTwoIndicators(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	fmt.Println(indicator1, indicator2)
-	response := []model.Indicator{}
+	formattedData := []model.Indicator{}
 	for _, row := range data {
 		x, _ := strconv.Atoi(row[columns[indicator1]])
 		y, _ := strconv.Atoi(row[columns[indicator2]])
@@ -85,8 +85,46 @@ func compareTwoIndicators(w http.ResponseWriter, r *http.Request) {
 			X:     x,
 			Y:     y,
 		}
-		response = append(response, object)
+		formattedData = append(formattedData, object)
 	}
+	formattedData = formattedData[1:]
+	response := []model.Group{}
+	prevLabel := formattedData[0].Label
+	fmt.Println(prevLabel)
+	var preData [][]int
+	for i, object := range formattedData {
+
+		var tuple []int
+		x := object.X
+		y := object.Y
+		tuple = append(tuple, x)
+		tuple = append(tuple, y)
+
+		label := object.Label
+
+		if prevLabel == label {
+			preData = append(preData, tuple)
+		} else {
+			group := model.Group{}
+			group.NAME = prevLabel
+			group.DATA = preData
+			if len(preData) != 0 {
+				response = append(response, group)
+				preData = nil
+				preData = append(preData, tuple)
+			} else {
+				preData = append(preData, tuple)
+			}
+		}
+		if i == len(formattedData)-1 {
+			group := model.Group{}
+			group.NAME = prevLabel
+			group.DATA = preData
+			response = append(response, group)
+		}
+		prevLabel = label
+	}
+
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(response)
 }
