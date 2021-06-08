@@ -9,6 +9,8 @@ import (
 	"os"
 	"strconv"
 
+	"github.com/rs/cors"
+
 	"github.com/8rb/Go-API/model"
 	"github.com/gorilla/mux"
 )
@@ -194,10 +196,16 @@ func main() {
 	data = readCsvFile("./indicadoresrural2018.csv")
 
 	router := mux.NewRouter().StrictSlash(true)
+	c := cors.New(cors.Options{
+		AllowedOrigins:   []string{"http://localhost:8000"},
+		AllowCredentials: true,
+	})
+
+	handler := c.Handler(router)
 
 	router.HandleFunc("/", indexRoute)
 	router.HandleFunc("/indicators", getAllIndicators).Methods("GET")
 	router.HandleFunc("/indicators/{name}", getIndicatorByName).Methods("GET")
 	router.HandleFunc("/indicators/{indicator1}/{indicator2}", compareTwoIndicators).Methods("GET")
-	log.Fatal(http.ListenAndServe(":"+port, router))
+	log.Fatal(http.ListenAndServe(":"+port, handler))
 }
