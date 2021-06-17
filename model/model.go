@@ -15,6 +15,21 @@ type Indicator struct {
 	Label string `json:"label"`
 }
 
+type Item struct {
+	X       int    `json:"x"`
+	Y       int    `json:"y"`
+	Region  string `json:"region"`
+	Factor  int    `json:"factor"`
+	GroupId int    `json:"groupId"`
+}
+
+type OldItem struct {
+	X         int    `json:"x"`
+	Y         int    `json:"y"`
+	Region    string `json:"region"`
+	GroupName string `json:"group_name"`
+}
+
 type AllFields struct {
 	D_DPTO            string `json:"D_DPTO"`
 	D_PROV            string `json:"D_PROV"`
