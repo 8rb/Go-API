@@ -176,21 +176,108 @@ func GetAllIndicators(data [][]string) http.HandlerFunc {
 	}
 }
 
-func workerCalculateFactor(c chan []model.Item, halfItems []model.Item) {
-	for i := range halfItems {
-		halfItems[i].Factor = halfItems[i].X * halfItems[i].Y
-	}
-}
-
-func workerCalculateTotalFactor(c chan int, halfItems []model.Item) {
-	halfFactor := 0
-	for i := range halfItems {
-		halfFactor += halfItems[i].Factor
-	}
-	c <- halfFactor
-}
-
 func KmeansTwoIndicators(data [][]string) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		vars := mux.Vars(r)
+		// First we get the variables from the URI
+		indicator1 := vars["indicator1"]
+		indicator2 := vars["indicator2"]
+		fmt.Println(indicator1, indicator2)
+		items := []model.Item{}
+		groupId := 0
+		// Then, we iterate over the data to assign the x and y coordinates
+		// Factor starts at 0, since we will calculate it later
+		// GroupId starts at 0 since we will calculate it later
+		for _, row := range data {
+			x, _ := strconv.Atoi(row[columns[indicator1]])
+			y, _ := strconv.Atoi(row[columns[indicator2]])
+			region := row[columns["D_DPTO"]]
+			object := model.Item{
+				X:       x,
+				Y:       y,
+				Region:  region,
+				Factor:  0,
+				GroupId: groupId,
+			}
+			items = append(items, object)
+		}
+
+		for i := range items {
+			items[i].Factor = items[i].X * items[i].Y
+		}
+
+		// Later we proceed to calculate the total factor
+		// Which is the sum of all the factors of each element
+
+		totalFactor := 0
+		for i := range items {
+			totalFactor += items[i].Factor
+		}
+
+		fmt.Println("TOTAL FACTOR:", totalFactor)
+
+		// With the total factor we calculate the clusterClassifier
+		// Which will help us to divide the elements into clusters
+		clusterClassifier := totalFactor / len(items) / 3
+		fmt.Println("CLUSTER CLASSIFIER:", clusterClassifier)
+
+		// Later we sort the items based on that factor
+		sort.Slice(items, func(i, j int) bool {
+			return items[i].Factor < items[j].Factor
+		})
+
+		formattedItems := []model.Item{}
+		// we remove the empty data (the one that has 0's)
+		for i := range items {
+			if items[i].Factor != 0 {
+				formattedItems = append(formattedItems, items[i])
+			}
+		}
+		// From now on we will use the "formattedItems" slice/array
+		// Now we assign the groups to each element based on the difference of its Factor
+		for i := 0; i < len(formattedItems)-1; i++ {
+			if formattedItems[i+1].Factor-formattedItems[i].Factor > clusterClassifier {
+				groupId += 1
+				clusterClassifier += clusterClassifier
+			}
+			formattedItems[i+1].GroupId = groupId
+		}
+		// Now we format the data for the front-end:
+
+		//We define our data types
+		response := []model.Group{}
+		actualGroup := model.Group{}
+		var actualData [][]int
+
+		// We add the first element to the data group
+		var firstTuple []int
+		firstTuple = append(firstTuple, formattedItems[0].X)
+		firstTuple = append(firstTuple, formattedItems[0].Y)
+
+		actualData = append(actualData, firstTuple)
+
+		// We start the formatting
+		for i := 0; i < len(formattedItems)-1; i++ {
+			var tuple []int
+			tuple = append(tuple, formattedItems[i+1].X)
+			tuple = append(tuple, formattedItems[i+1].Y)
+			if formattedItems[i].GroupId == formattedItems[i+1].GroupId {
+				actualData = append(actualData, tuple)
+			} else {
+				actualGroup.NAME = "Cluster " + strconv.Itoa(formattedItems[i].GroupId+1)
+				actualGroup.DATA = actualData
+				response = append(response, actualGroup)
+				actualData = nil
+				actualData = append(actualData, tuple)
+			}
+		}
+
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(response)
+	}
+}
+
+func KmeansConcurrentTwoIndicators(data [][]string) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		vars := mux.Vars(r)
 		// First we get the variables from the URI
@@ -247,7 +334,7 @@ func KmeansTwoIndicators(data [][]string) http.HandlerFunc {
 		// With the total factor we calculate the clusterClassifier
 		// Which will help us to divide the elements into clusters
 		clusterClassifier := totalFactor / len(items) / 3
-		fmt.Println("GROUP CLASSIFIER:", clusterClassifier)
+		fmt.Println("CLUSTER CLASSIFIER:", clusterClassifier)
 
 		// Later we sort the items based on that factor
 		sort.Slice(items, func(i, j int) bool {

@@ -47,5 +47,7 @@ func main() {
 	router.HandleFunc("/indicators/{name}", service.GetIndicatorByName(data)).Methods("GET")
 	router.HandleFunc("/indicators/{indicator1}/{indicator2}", service.CompareTwoIndicators(data)).Methods("GET")
 	router.HandleFunc("/kmeans/{indicator1}/{indicator2}", service.KmeansTwoIndicators(data)).Methods("GET")
+	router.HandleFunc("/kmeansconcurrent/{indicator1}/{indicator2}", service.KmeansConcurrentTwoIndicators(data)).Methods("GET")
+
 	log.Fatal(http.ListenAndServe(":"+port, handler))
 }
