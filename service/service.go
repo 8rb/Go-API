@@ -91,6 +91,14 @@ func CompareTwoIndicators(data [][]string) http.HandlerFunc {
 			formattedData = append(formattedData, object)
 		}
 		formattedData = formattedData[1:]
+		noZeroData := []model.Indicator{}
+		for i := range formattedData {
+			if formattedData[i].X != 0 && formattedData[i].Y != 0 {
+				noZeroData = append(noZeroData, formattedData[i])
+			}
+		}
+		formattedData = nil
+		formattedData = noZeroData
 		response := []model.Group{}
 		prevLabel := formattedData[0].Label
 		fmt.Println(prevLabel)
@@ -263,12 +271,22 @@ func KmeansTwoIndicators(data [][]string) http.HandlerFunc {
 			tuple = append(tuple, formattedItems[i+1].Y)
 			if formattedItems[i].GroupId == formattedItems[i+1].GroupId {
 				actualData = append(actualData, tuple)
+				if i+1 == len(formattedItems)-1 {
+					actualGroup.NAME = "Cluster " + strconv.Itoa(formattedItems[i].GroupId+1)
+					actualGroup.DATA = actualData
+					response = append(response, actualGroup)
+				}
 			} else {
 				actualGroup.NAME = "Cluster " + strconv.Itoa(formattedItems[i].GroupId+1)
 				actualGroup.DATA = actualData
 				response = append(response, actualGroup)
 				actualData = nil
 				actualData = append(actualData, tuple)
+				if i+1 == len(formattedItems)-1 {
+					actualGroup.NAME = "Cluster " + strconv.Itoa(formattedItems[i+1].GroupId+1)
+					actualGroup.DATA = actualData
+					response = append(response, actualGroup)
+				}
 			}
 		}
 
